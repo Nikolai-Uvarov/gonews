@@ -141,6 +141,10 @@ func (s *Store) UpdatePost(p storage.Post) error {
 
 	return nil
 }
-func (s *Store) DeletePost(storage.Post) error {
-	return nil
+func (s *Store) DeletePost(p storage.Post) error {
+
+	_, err := s.DB.Exec(s.ctx,
+		`DELETE FROM posts WHERE id = ($1);`, p.ID)
+
+	return err
 }
