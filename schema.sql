@@ -1,17 +1,28 @@
-DROP TABLE IF EXISTS posts, authors;
+DROP TABLE IF EXISTS authors, posts;
 
-CREATE TABLE authors (
-    id SERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS authors (
+    id BIGSERIAL PRIMARY KEY, 
     name TEXT NOT NULL
 );
 
-CREATE TABLE posts (
-    id SERIAL PRIMARY KEY,
-    author_id INTEGER REFERENCES authors(id) NOT NULL,
-    title TEXT  NOT NULL,
-    content TEXT NOT NULL,
-    created_at BIGINT NOT NULL
+CREATE TABLE IF NOT EXISTS posts (
+    id BIGSERIAL PRIMARY KEY, 
+	author_id BIGINT NOT NULL REFERENCES authors(id),
+	title TEXT NOT NULL,
+	content TEXT NOT NULL,
+	created_at BIGINT NOT NULL DEFAULT 0
 );
 
-INSERT INTO authors (id, name) VALUES (0, 'Дмитрий');
-INSERT INTO posts (id, author_id, title, content, created_at) VALUES (0, 0, 'Статья', 'Содержание статьи', 0);
+-- Очистка всех таблиц перед наполнением тестовыми данными.
+TRUNCATE TABLE authors, posts;
+
+-- Наполнение таблиц тестовыми данными.
+INSERT INTO authors(name) VALUES
+    ('Маск'), ('Цукерберг');
+	
+INSERT INTO posts(author_id,title, content, created_at) VALUES
+    (1,'Особенности сражений в Колизее', 'Главное быть готовым к дерзости противника...', 1687180530),
+	(2,'Моя борьба и победа', 'Все начиналось как шоу...', 1687180550),
+	(1,'Держи карман шире', 'Некоторые самоуверенные личности...', 1687180570);
+
+
