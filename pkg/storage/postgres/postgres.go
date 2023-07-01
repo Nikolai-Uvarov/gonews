@@ -65,29 +65,28 @@ func (s *Store) Posts() ([]storage.Post, error) {
 	return posts, rows.Err()
 }
 
-func (s *Store) AddPost(p storage.Post) error {
+func (s *Store) addAuthor(name string) (int64, error) {
 
 	//проверить, существует ли автор по имени
 	//если нет, то вставить нового автора
-	//если есть, то подставить author_id
+	//узнать id существовавшего или вновь созданного автора
 
 	_, err := s.DB.Exec(s.ctx,
 		`INSERT INTO authors (name) 
 		SELECT ($1)
-		WHERE NOT EXISTS (SELECT * FROM authors WHERE name =($1) LIMIT 1);`, p.AuthorName)
+		WHERE NOT EXISTS (SELECT * FROM authors WHERE name =($1) LIMIT 1);`, name)
 
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	rows, err := s.DB.Query(s.ctx,
-		`SELECT id FROM authors WHERE name = ($1);`, p.AuthorName)
+		`SELECT id FROM authors WHERE name = ($1);`, name)
 
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	//получаем из БД id созданного или уже существовавшего автора
 	var id []int64
 	for rows.Next() {
 
@@ -95,23 +94,51 @@ func (s *Store) AddPost(p storage.Post) error {
 		err = rows.Scan(&ci)
 
 		if err != nil {
-			return err
+			return 0, err
 		}
 		id = append(id, ci)
 	}
 
+	return id[0], rows.Err()
+}
+
+func (s *Store) AddPost(p storage.Post) error {
+	//получаем из БД id созданного или уже существовавшего автора
+	id, err := s.addAuthor(p.AuthorName)
+
+	if err != nil {
+		return err
+	}
+	//записываем в базу новый пост
 	_, err = s.DB.Exec(s.ctx,
 		`INSERT INTO posts(author_id,title, content, created_at, published_at) 
-		VALUES (($1), ($2), ($3), ($4),($5));`, id[0], p.Title, p.Content, p.CreatedAt, time.Now().Unix())
+		VALUES (($1), ($2), ($3), ($4),($5));`, id, p.Title, p.Content, p.CreatedAt, time.Now().Unix())
 
 	if err != nil {
 		return err
 	}
 
-	return rows.Err()
+	return nil
 }
 
-func (s *Store) UpdatePost(storage.Post) error {
+func (s *Store) UpdatePost(p storage.Post) error {
+	//получаем из БД id созданного или уже существовавшего автора
+	id, err := s.addAuthor(p.AuthorName)
+
+	if err != nil {
+		return err
+	}
+	//обновляем в базе пост
+	_, err = s.DB.Exec(s.ctx,
+		`UPDATE posts 
+		SET author_id = ($1), title = ($2), content = ($3), published_at = ($4) 
+		WHERE id = ($5);`,
+		id, p.Title, p.Content, time.Now().Unix(), p.ID)
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 func (s *Store) DeletePost(storage.Post) error {
