@@ -4,10 +4,9 @@ import (
 	"GoNews/pkg/api"
 	"GoNews/pkg/storage"
 	"GoNews/pkg/storage/memdb"
-	"GoNews/pkg/storage/postgres"
+	"GoNews/pkg/storage/mongo"
 	"log"
 	"net/http"
-	"os"
 )
 
 // Сервер GoNews.
@@ -27,22 +26,22 @@ func main() {
 
 	// Реляционная БД PostgreSQL.
 	// Подключение к БД
-	dbpass := os.Getenv("dbpass")
+	/*dbpass := os.Getenv("dbpass")
 	db2, err := postgres.New("postgres://postgres:" + dbpass + "@192.168.1.35:5432/posts")
 	if err != nil {
 		log.Fatal(err)
-	}
-	/* Документная БД MongoDB.
-	db3, err := mongo.New("mongodb://server.domain:27017/")
+	}*/
+	// Документная БД MongoDB.
+
+	db3, err := mongo.New("mongodb://192.168.1.35:27017/")
 	if err != nil {
 		log.Fatal(err)
 	}
-	_, _ = db2, db3
-	*/
+	//_, _ = db2, db3
 
 	// Инициализируем хранилище сервера конкретной БД.
 	_ = db
-	srv.db = db2
+	srv.db = db3
 
 	// Создаём объект API и регистрируем обработчики.
 	srv.api = api.New(srv.db)
