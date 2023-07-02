@@ -27,6 +27,12 @@ func New(constr string) (*Store, error) {
 		return nil, err
 	}
 
+	// проверка связи с БД
+	err = s.DB.Ping(s.ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	return &s, nil
 }
 
