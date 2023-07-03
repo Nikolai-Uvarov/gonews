@@ -38,7 +38,28 @@ func New(constr string) (*Store, error) {
 }
 
 func (s *Store) Posts() ([]storage.Post, error) {
-	return posts, nil
+	//выбираем базу и коллекцию
+	collection := s.client.Database(databaseName).Collection(collectionName)
+	//пустой фильтр
+	filter := bson.D{}
+	//выборка из бд
+	cur, err := collection.Find(s.ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(context.Background())
+
+	//разбор результата по массиву постов
+	var data []storage.Post
+	for cur.Next(s.ctx) {
+		var l storage.Post
+		err := cur.Decode(&l)
+		if err != nil {
+			return nil, err
+		}
+		data = append(data, l)
+	}
+	return data, cur.Err()
 }
 
 func (s *Store) AddPost(p storage.Post) error {
